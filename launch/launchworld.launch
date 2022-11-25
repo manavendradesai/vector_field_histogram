@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- World File -->
+  <arg name="world_file" default="$(find vector_field_histogram)/world/emptyworld"/>
+
+  <!-- Launch Gazebo World -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world_file)"/>
+  </include>
+
+<!--launch rviz-->
+<node name="rviz" pkg="rviz" type="rviz" respawn="false"/>
+
+</launch>
