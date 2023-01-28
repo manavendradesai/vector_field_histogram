@@ -38,9 +38,11 @@ import math
 # temp = (2**2)**(0.5)
 # print(temp)
 
-Jcp = np.array([[7,8,9],[4,5,6],[1,2,3]])
-print(Jcp)
+Jcp = np.array([[13,14,15,16],[9,10,11,12],[5,6,7,8],[1,2,3,4]])
+a = 2
+b = 3
+print(Jcp[a][b])
 fJcp = np.flip(Jcp,axis=0)
 #Reshape into the 1D array
-ODcp = np.reshape(fJcp,9)
-print(ODcp)
+ODcp = np.reshape(fJcp,16)
+print(ODcp[(4-a-1)*4 + b + 1 - 1])

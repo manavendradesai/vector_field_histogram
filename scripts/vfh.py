@@ -3,7 +3,6 @@ from matplotlib.patches import Rectangle
 from matplotlib.patches import Circle
 from matplotlib.patches import Arrow
 import numpy as np
-import math
 
 #Metric system followed
 
@@ -14,31 +13,32 @@ ds = 0.05                   #grid cell size
 
 #Initialize robot details
 dia = 0.2                   #diameter
-xR0 = np.array([2.8,3.0])
+xR0 = np.array([4,2])
 psi0 = np.pi/4              #X location, Y location, orientation   
 xyR = xR0   
 psiR = psi0              
 
 #Goal pose
-xG = np.array([0,3])
+xG = np.array([-2,4])
 psiG = np.pi/2
 
-#Initialize obstacle locations. 
+#Initialize obstacle locations 
 #Lower left vertex
-OA = np.array([1.5,2])             #obstacle A
-Os = 1                             #obstacle size
+# OA = np.array([1.5,2])       #obstacle A
+Os = 1                       #obstacle size
 
 #Obstacle centers
 OAc = np.array([2,2.5])
 
 #Local costmap dimension (a square)
-lcms = 1.2                  #length
+lcms = 1.2                   #length
 
 #Number of grid cells along one edge
-ncm  = int(np.rint((lcms/ds)))
+ncm = 25
 
 #Lethal distance and cost
-ld = (Os/2)*1.414 + dia/2
+buffer = 1.2
+ld = buffer*((Os/2)*1.414 + dia/2)
 LJ = 255
 lJ = LJ*np.exp(-ld)
 
@@ -52,8 +52,13 @@ LA = 11
 #Plot initial environment
 fig,ax=plt.subplots(1,1)
 
+# #Plot obstacles
+# obsA = Rectangle(OA,Os,Os,color='red',fill='true') 
+# ax.add_patch(obsA)
+
 #Plot obstacles
-obsA = Rectangle(OA,Os,Os,color='red',fill='true') 
+# obsA = Rectangle(OA,Os,Os,color='red',fill='true') 
+obsA = Circle(OAc,radius=(Os/2)*1.414,color='red',fill='true') 
 ax.add_patch(obsA)
 
 #Plot robot
@@ -105,31 +110,34 @@ plt.show()
 fJcp = np.flip(Jcp,axis=0)
 #Reshape into the 1D array
 ODcp = np.reshape(fJcp,ncm**2)
+print(len(ODcp))
 
 #Set previous VFH waypoint
 xyvfh0 = xyR
 xyvfh = xyR
 psivfh = psiR
+
 #VFH weights
-wg = 5
+wg = 3
 wd = 1
 wo = 1
 
 CWX = 0
 CWY = 0
 
-PTSJ = 0
+# PTSJ = 0
 
-SI = 0
+# SI = 0
 
-CS = 0
-RS = 0
+# CS = 0
+# RS = 0
 
-CSG = 0
-RSG = 0
+# THETAG = 0
+# THETAWP = 0
+# THETAWP0 = 0
 
-# while np.linalg.norm(xyR-xG)>dia:
-for i in range(0,3):
+while np.linalg.norm(xyR-xG)>dia:
+# for i in range(0,10):
 #Select candidate waypoints on active circle boundary
 #Select a heading
 
@@ -139,36 +147,31 @@ for i in range(0,3):
     #Discretize forward motion
     #Distance to goal in terms of grid cells
     d2G = np.int(np.linalg.norm(xyR-xG)/ds)
-    #Check if goal is near
+    #Check if goal is nearer
     n = min(LA,d2G)
-    print(n)
+    # print(n)
     npts = np.linspace(3,n,5,int)
-    print(npts)
-
-    ctheta = 0
+    # print(npts)
 
     for theta in vfhpsi:
+        #Get indices in 1-D costmap array
         #Get relative xy positions of each cell in world frame
         #in grid cell count
-        csg = npts*np.cos(theta)
-        rsg = npts*np.sin(theta)
-
-        #Get indices in 1-D costmap array
+        
         #Column shift
-        cs = csg
-        # print(cs)
+        cs = npts*np.cos(theta)
         #Row shift
-        rs = rsg
-        # print(rs)
+        rs = npts*np.sin(theta)
         #Indices
-        I = int((ncm**2)*0.5) + (cs + ncm*rs)
+        csg = ncm//2 + 1 + cs - 1
+        rsg = ncm//2 + 1 - rs - 1
+        I = (ncm-rsg-1)*ncm + csg + 1 - 1
+
         #Retrieve costs at these indices
         cJ = ODcp[np.int_(I)]
 
         #Check if all costs are below critical cost lJ
         if np.all(cJ<lJ):
-            
-            ctheta = ctheta+1
 
             #Jump to furthest grid cell along direction theta
             #Candidate waypoint xy coordinates in world frame
@@ -176,39 +179,41 @@ for i in range(0,3):
             cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
             
             #Robot heading to goal
-            thetag = np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001))
+            thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
             #Robot heading to candidate waypoint
-            thetawp = np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)) 
+            # thetawp = np.mod(2*np.pi + np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)), 2*np.pi) 
+            thetawp = theta
             #Robot heading to previous waypoint
-            thetawp0 = np.arctan2((xyvfh0[1]-xyR[1]),(xyvfh0[0]-xyR[0]+0.001))
+            thetawp0 = np.mod(2*np.pi + np.arctan2((xyvfh0[1]-xyR[1]),(xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
             #Calculate VFH cost at the candidate waypoint
             J = (wg*(np.abs(thetag-thetawp)) + wd*(np.abs(thetawp-thetawp0)) + 
             wo*np.abs((psiR-thetawp)))
 
             #Compare candidate waypoint cost and current minimum
-            if J<Jvfh:
+            if J<=Jvfh:
                 #Update candidate waypoint and min VFH cost
                 xyvfh = np.array([cwx,cwy])
-                psivfh = thetawp
+                psivfh = thetawp*(n==LA) + psiG*(n!=LA)
                 Jvfh = J
                 CWX = xyR[0] + ds*npts[-1]*np.cos(theta)
                 CWY = xyR[1] + ds*npts[-1]*np.sin(theta)
-                PTSJ = cJ
-                SI = I
-                CS = cs
-                RS = rs
-                CSG = csg
-                RSG = rsg
+                # PTSJ = cJ
+                # SI = I
+                # CS = cs
+                # RS = rs
+                # THETAG = thetag
+                # THETAWP = thetawp
+                # THETAWP0 = thetawp0
 
-    print(CSG)
-    print(RSG)
-    print(CS)
-    print(RS)
-    print(SI)
-    # print(ctheta)
-    print(psivfh)
-    print(CWX,CWY)
-    print(PTSJ)
+    # print(CS)
+    # print(RS)
+    # print(SI)
+    # print(np.int_(SI))
+    # print(THETAG)
+    # print(THETAWP)
+    # print(THETAWP0)
+    # print(CWX,CWY)
+    # print(PTSJ)
     arr = Arrow(xyR[0],xyR[1],-xyR[0]+CWX,-xyR[1]+CWY)
 
     #Update robot pose
@@ -220,16 +225,12 @@ for i in range(0,3):
 
     #Update costmap
     dxcp = xcp*lcms/2 + xyR[0]
-    # print(xcp)
     dycp = ycp*lcms/2 + xyR[1]
-    # print(ycp)
 
     #Calculate distance based costs
     dcp = ((dxcp-OAc[0])**2 + (dycp-OAc[1])**2)**(0.5) 
 
     Jcp = LJ*np.exp(-dcp)
-
-    # print(Jcp[ncm//2][ncm//2]) 
 
     #Create a 1D cost array
     #Flip the cost matrix 
@@ -244,12 +245,13 @@ for i in range(0,3):
     ax = fig.add_subplot(111)
 
     #Plot obstacles
-    obsA = Rectangle(OA,Os,Os,color='red',fill='true') 
+    # obsA = Rectangle(OA,Os,Os,color='red',fill='true') 
+    obsA = Circle(OAc,radius=(Os/2)*1.414,color='red',fill='true') 
     ax.add_patch(obsA)
 
-    # #Plot robot
-    # rbt = Circle(xyR,radius=dia/2,color='blue',fill='true')
-    # ax.add_patch(rbt)
+    #Plot robot
+    rbt = Circle(xyR,radius=dia/2,color='blue',fill='true')
+    ax.add_patch(rbt)
 
     #Plot direction of motion
     ax.add_patch(arr)
@@ -266,16 +268,19 @@ for i in range(0,3):
     plt.ylabel('Y (m)')
     plt.show()
 
-    #Plot updated costmap
-    fig2,ax2=plt.subplots(1,1)
-    cp = ax2.contourf(xcp, ycp, Jcp)
-    fig2.colorbar(cp)
-    ax2.set_title('Euclidean distance based cost')
-    ax2.set_xlabel('X (m)')
-    ax2.set_ylabel('Y (m)')
-    plt.xlim(-lcms/2,lcms/2)
-    plt.ylim(-lcms/2,lcms/2)
-    plt.show()
+#     #Plot updated costmap
+#     fig2,ax2=plt.subplots(1,1)
+#     cp = ax2.contourf(xcp, ycp, Jcp)
+#     fig2.colorbar(cp)
+#     ax2.set_title('Euclidean distance based cost')
+#     ax2.set_xlabel('X (m)')
+#     ax2.set_ylabel('Y (m)')
+#     plt.xlim(-lcms/2,lcms/2)
+#     plt.ylim(-lcms/2,lcms/2)
+#     plt.show()
+
+print(xyR)
+print(psiR)
 
 
 
