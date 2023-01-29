@@ -1,0 +1,12 @@
+<launch>
+
+<!-- Launch move_base, AMCL and teleop nodes -->
+<include file = "$(find vector_field_histogram)/launch/costmap.launch"/>
+
+<!-- Load VFH parameters -->
+<rosparam file = "$(find vector_field_histogram)/param/vfhwp.yaml"/>
+
+<!-- Launch vfh node -->
+
+
+</launch>
