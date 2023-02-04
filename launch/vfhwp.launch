@@ -7,6 +7,6 @@
 <rosparam file = "$(find vector_field_histogram)/param/vfhwp.yaml"/>
 
 <!-- Launch vfh node -->
-
+<node name="vfhwp" pkg="vector_field_histogram" type="vfhwp.py" output="screen"/>
 
 </launch>

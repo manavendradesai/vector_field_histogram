@@ -38,11 +38,33 @@ import math
 # temp = (2**2)**(0.5)
 # print(temp)
 
-Jcp = np.array([[13,14,15,16],[9,10,11,12],[5,6,7,8],[1,2,3,4]])
-a = 2
-b = 3
-print(Jcp[a][b])
-fJcp = np.flip(Jcp,axis=0)
-#Reshape into the 1D array
-ODcp = np.reshape(fJcp,16)
-print(ODcp[(4-a-1)*4 + b + 1 - 1])
+# Jcp = np.array([[13,14,15,16],[9,10,11,12],[5,6,7,8],[1,2,3,4]])
+# a = 2
+# b = 3
+# print(Jcp[a][b])
+# fJcp = np.flip(Jcp,axis=0)
+# #Reshape into the 1D array
+# ODcp = np.reshape(fJcp,16)
+# print(ODcp[(4-a-1)*4 + b + 1 - 1])
+
+class Dog:
+
+    #Class variables
+    atr1 = "mammal"
+    atr2 = "dog"
+
+    def __init__(self, age):
+
+        #Instance variable
+        self.age = age
+
+    def fun(self):
+        print("I am a ", self.atr1)
+        print("I am a ", self.atr2)
+
+
+Rodger = Dog(10)
+
+print(Rodger.atr1)
+Rodger.fun()
+print(Rodger.age)

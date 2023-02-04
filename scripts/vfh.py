@@ -52,10 +52,6 @@ LA = 11
 #Plot initial environment
 fig,ax=plt.subplots(1,1)
 
-# #Plot obstacles
-# obsA = Rectangle(OA,Os,Os,color='red',fill='true') 
-# ax.add_patch(obsA)
-
 #Plot obstacles
 # obsA = Rectangle(OA,Os,Os,color='red',fill='true') 
 obsA = Circle(OAc,radius=(Os/2)*1.414,color='red',fill='true') 
