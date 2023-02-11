@@ -146,7 +146,7 @@ while np.linalg.norm(xyR-xG)>dia:
 
     #Discretize forward motion
     #Distance to goal in terms of grid cells
-    d2G = np.int(np.linalg.norm(xyR-xG)/ds)
+    d2G = np.int_(np.linalg.norm(xyR-xG)/ds)
     #Check if goal is nearer
     n = min(LA,d2G)
     # print(n)
