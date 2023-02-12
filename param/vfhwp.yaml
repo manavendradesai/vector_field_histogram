@@ -4,6 +4,6 @@ vfh:
   wg: 3
   wd: 1
   wo: 1
-  crit_cost: 75
+  crit_cost: 80
   ndpsi: 36
   ncm: 20

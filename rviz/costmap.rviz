@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Marker1
+        - /Marker2
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz/Selection
@@ -144,7 +145,7 @@ Visualization Manager:
       Axes Radius: 0.009999999776482582
       Class: rviz/PoseArray
       Color: 252; 233; 79
-      Enabled: true
+      Enabled: false
       Head Length: 0.07000000029802322
       Head Radius: 0.029999999329447746
       Name: PoseArray
@@ -154,7 +155,7 @@ Visualization Manager:
       Shape: Arrow (Flat)
       Topic: /particlecloud
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 0.699999988079071
       Class: rviz/Map
       Color Scheme: costmap
@@ -239,6 +240,14 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /goal_marker
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -283,9 +292,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.20479770004749298
+      Pitch: 0.5997977256774902
       Target Frame: <Fixed Frame>
-      Yaw: 1.4304057359695435
+      Yaw: 1.1704063415527344
     Saved: ~
 Window Geometry:
   Displays:
