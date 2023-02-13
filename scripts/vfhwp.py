@@ -67,7 +67,7 @@ class VFH:
         self.Y = pose_msg.pose.pose.position.y
         psiz = pose_msg.pose.pose.orientation.z
         psiw = pose_msg.pose.pose.orientation.w
-        self.psi = 2*np.arctan2((psiz),(0.001+psiw))
+        self.psi = np.mod(2*np.pi + 2*np.arctan2((psiz),(0.001+psiw)),2*np.pi)
 
         #Set flag to true
         self.fodom = True
@@ -121,66 +121,90 @@ class VFH:
         xyvfh = np.array([0,0])
         psivfh = 0
 
+        #Initialize debuggers
+        THETAG = 0
+        THETAWP = 0
+        THETAWP0 = 0
+
         #Initialize VFH cost
         Jvfh = 10000
 
         #Discretize forward motion
         #Distance to goal in terms of grid cells
         d2G = np.int(np.linalg.norm(xyR-xG)/ds)
-        #Check if goal is nearer
-        n = min(LA,d2G)
-        npts = np.linspace(3,n,5,int)
 
-        for theta in vfhpsi:
-            #Get indices in 1-D costmap array
-            #Get relative xy positions of each cell in world frame
-            #in grid cell count
-            
-            #Column shift
-            cs = npts*np.cos(theta)
-            #Row shift
-            rs = npts*np.sin(theta)
-            #Indices
-            csg = ncm//2 + 1 + cs - 1
-            rsg = ncm//2 + 1 - rs - 1
-            I = np.int_((ncm-rsg-1)*ncm + csg + 1 - 1)
+        #Check if goal is further than lookahead distance
+        if d2G>LA:
 
-            #Retrieve costs at these indices
-            # cJ = ODcp[np.int_(I)]
-            cJ = ODcp[I]
+            npts = np.linspace(3,LA,5,int)
 
-            #Check if all costs are below critical cost lJ
-            if np.all(cJ<crit_cost):
-
-                #Jump to furthest grid cell along direction theta
-                #Candidate waypoint xy coordinates in world frame
-                cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
-                cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
+            for theta in vfhpsi:
+                #Get indices in 1-D costmap array
+                #Get relative xy positions of each cell in world frame
+                #in grid cell count
                 
-                #Robot heading to goal
-                thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
-                #Robot heading to candidate waypoint
-                # thetawp = np.mod(2*np.pi + np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)), 2*np.pi) 
-                thetawp = theta
-                #Robot heading to previous waypoint
-                thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
-                #Calculate VFH cost at the candidate waypoint
-                J = (wg*(np.abs(thetag-thetawp)) + wd*(np.abs(thetawp-thetawp0)) + 
-                wo*np.abs((psiR-thetawp)))
+                #Column shift
+                cs = npts*np.cos(theta)
+                #Row shift
+                rs = npts*np.sin(theta)
+                #Indices
+                csg = ncm//2 + 1 + cs - 1
+                rsg = ncm//2 + 1 - rs - 1
+                I = np.int_((ncm-rsg-1)*ncm + csg + 1 - 1)
 
-                #Compare candidate waypoint cost and current minimum
-                if J<=Jvfh:
-                    #Update candidate waypoint and min VFH cost
-                    xyvfh = np.array([cwx,cwy],dtype=Float32MultiArray)
-                    psivfh = thetawp*(n==LA) + psiG*(n!=LA)
-                    Jvfh = J
+                #Retrieve costs at these indices
+                cJ = ODcp[I]
+
+                #Check if all costs are below critical cost lJ
+                if np.all(cJ<crit_cost):
+
+                    #Jump to furthest grid cell along direction theta
+                    #Candidate waypoint xy coordinates in world frame
+                    cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
+                    cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
+                    
+                    #Robot heading to goal
+                    thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
+                    #Robot heading to candidate waypoint
+                    # thetawp = np.mod(2*np.pi + np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)), 2*np.pi) 
+                    thetawp = theta
+                    #Robot heading to previous waypoint
+                    thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
+                    #Calculate VFH cost at the candidate waypoint
+                    J = (wg*(np.abs(thetag-thetawp)) + wd*(np.abs(thetawp-thetawp0)) + 
+                    wo*np.abs((psiR-thetawp)))
+
+                    #Compare candidate waypoint cost and current minimum
+                    if J<=Jvfh:
+                        #Update candidate waypoint and min VFH cost
+                        xyvfh = np.array([cwx,cwy],dtype=Float32MultiArray)
+                        # psivfh = thetawp*(n==LA) + psiG*(n!=LA)
+                        psivfh = thetawp
+                        Jvfh = J
+
+                        #Debuggers
+                        THETAWP = thetawp
+                        THETAG = thetag
+                        THETAWP0 = thetawp0
+
+        else:
+            xyvfh = np.array(xG,dtype=Float32MultiArray)
+            psivfh = psiG
+            # THETAWP = thetawp
+            # THETAG = thetag
+            # THETAWP0 = thetawp0
 
         #Update previous waypoint
         self.xyvfh0 = xyvfh
 
         #Print waypoint coordinate and cost
-        print('VFH waypoint: ', xyvfh)
-        print('VFH cell cost: ', Jvfh)
+        print('VFH waypoint: ',xyvfh)
+        print('VFH waypoint pose: ',psivfh)
+        print('Costmap cost: ',ODcp[(ncm-ncm//2-1)*ncm + ncm//2])
+        print('THETAWP: ',THETAWP)
+        print('THETAG: ',THETAG)
+        print('THETAWP0: ',THETAWP0)
+        print('psi: ',psiR)
 
         #Publish VFH paypoint
         wp = Float32MultiArray()
@@ -258,7 +282,7 @@ class VFH:
 
         self.marker.pose.position.x = wpx
         self.marker.pose.position.y = wpy
-        self.marker.pose.position.z = 0.1
+        self.marker.pose.position.z = 0.2
         self.marker.pose.orientation.x = 0.0
         self.marker.pose.orientation.y = 0.0
         self.marker.pose.orientation.z = np.sin(psiR/2)
