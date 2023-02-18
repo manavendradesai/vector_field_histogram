@@ -15,31 +15,34 @@ class VFH:
         #Robot diameter
         self.dia = rospy.get_param('/vfh/dia',0.2)
         #VFH weights
-        self.wg = rospy.get_param('/vfh/wg',3)
-        self.wo = rospy.get_param('/vfh/wo',1)
+        self.wg = rospy.get_param('/vfh/wg',10)
+        self.wo = rospy.get_param('/vfh/wo',7)
         self.wd = rospy.get_param('/vfh/wd',1)
         #Lookahead distance
-        self.LA = rospy.get_param('/vfh/LA',11)
+        self.LA = rospy.get_param('/vfh/LA',10)
         #VFH critical cost
-        self.crit_cost = rospy.get_param('/vfh/crit_cost',20)
+        self.crit_cost = rospy.get_param('/vfh/crit_cost',75)
         #Number of grid cells along one edge
         self.ncm = rospy.get_param('/vfh/ncm',20)
 
         #Angle discretization
-        self.ndpsi = rospy.get_param('/vfh/ndpsi',36)
+        self.ndpsi = rospy.get_param('/vfh/ndpsi',72)
 
         #Get goal
-        self.xG = np.array([1.8,0])
-        self.psiG = np.mod(2*np.pi + 0,2*np.pi)
+        self.xG = np.array([1.75,0.75])
+        self.psiG = np.mod(2*np.pi + np.pi/2,2*np.pi)
 
         #Get local costmap resolution
         self.ds = rospy.get_param('/move_base/local_costmap/resolution',0.05)
 
         #Get initial position and pose
-        self.xR0 = np.array([-0.6,0])
+        self.xR0 = np.array([0,0.75])
 
         #Initialize previous waypoint position and pose
         self.xyvfh0 = self.xR0
+
+        #Iteration counter
+        self.iter = 0
 
         #Define subscriber to odom
         self.odom_sub = rospy.Subscriber("/odom",Odometry,self.robot_pose)
@@ -117,7 +120,7 @@ class VFH:
         wo = self.wo
 
         #Discretize heading angles
-        ndpsi = 72
+        ndpsi = self.ndpsi
         vfhpsi = np.linspace(0,2*np.pi,ndpsi)
 
         #Initialize candidate waypoint location and pose
@@ -132,6 +135,9 @@ class VFH:
         RS = 0
         CWP = 0
         Ind = 0
+
+        self.iter = self.iter + 1
+        print('Iteration: ', self.iter)
 
         #Initialize VFH cost
         Jvfh = 10000
@@ -158,18 +164,6 @@ class VFH:
                 # print('CS', cs)
                 # print('RS',rs)
 
-                # #Indices
-                # csg = ncm//2 + 1 + cs - 1
-                # rsg = ncm//2 + 1 - rs - 1
-
-                # I = np.int_((ncm-rsg-1)*ncm + csg + 1 - 1)
-
-                # #Indices
-                # csg = ncm//2 + cs
-                # rsg = ncm//2 + rs
-
-                # I = np.int_((rsg-1)*ncm + csg - 1)
-
                 #Indices
                 csg = np.ceil(ncm//2 + cs)
                 rsg = np.floor(ncm//2 + rs)
@@ -179,11 +173,9 @@ class VFH:
                 # print('CSG',csg)
                 # print('RSG',rsg)
 
-                # # print('CSG',csg)
-                # # print('RSG',rsg)
-
                 #Retrieve costs at these indices
                 cJ = ODcp[I]
+
 
                 #Check if all costs are below critical cost lJ
                 if np.all(cJ<crit_cost):
@@ -201,8 +193,31 @@ class VFH:
                     #Robot heading to previous waypoint
                     thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
                     #Calculate VFH cost at the candidate waypoint
-                    J = (wg*(np.abs(thetag-thetawp)) + wd*(np.abs(thetawp-thetawp0)) + 
-                    wo*np.abs((psiR-thetawp)))
+                    # J1 = wg*(np.abs(thetag-thetawp))
+                    # J2 = wd*(np.abs(thetawp-thetawp0))
+                    # J3 = wo*(np.abs(psiR-thetawp))
+
+                    # a = targetA - sourceA
+                    # a = (a + 180) % 360 - 180
+
+                    sd = np.array([thetag,thetawp0,psiR])
+                    sd = sd - thetawp
+                    sd = np.abs(np.mod((sd + np.pi),2*np.pi) - np.pi)
+
+                    J1 = wg*sd[0]
+                    J2 = wd*sd[1]
+                    J3 = wo*sd[2]
+
+                    J = J1 + J2 + J3
+
+                    print('Cand. VFH waypoint: ',np.array([cwx,cwy]))
+                    print('Cand. VFH waypoint pose: ',thetawp)
+                    print('Robot to Goal pose: ',thetag)
+                    print('Cand. VFH cost wg: ',J1)
+                    print('Cand. VFH cost wd: ',J2)
+                    print('Cand. VFH cost wo: ',J3)
+                    print('Cand. VFH cost: ',J)
+                    print('Cand. costmap cost: ', cJ[-1])
 
                     #Compare candidate waypoint cost and current minimum
                     if J<=Jvfh:
@@ -212,19 +227,19 @@ class VFH:
                         Jvfh = J
 
                         #Debuggers
-                        THETAWP = thetawp
-                        THETAG = thetag
-                        THETAWP0 = thetawp0
+                        # THETAWP = thetawp
+                        # THETAG = thetag
+                        # THETAWP0 = thetawp0
                         CWP = cJ
-                        Ind = I
-                        CS = cs
-                        RS = rs
-
-                        print('Theta',theta)
+                        # Ind = I
+                        # CS = cs
+                        # RS = rs
 
         else:
             xyvfh = np.array(xG,dtype=Float32MultiArray)
             psivfh = psiG
+            print('Cand. VFH waypoint: ',xyvfh)
+            print('Cand. VFH waypoint pose: ',psivfh)
             # THETAWP = thetawp
             # THETAG = thetag
             # THETAWP0 = thetawp0
@@ -233,11 +248,11 @@ class VFH:
         self.xyvfh0 = xyvfh
 
         #Print waypoint coordinate and cost
-        print('VFH waypoint: ',xyvfh)
-        print('VFH waypoint pose: ',psivfh)
-        print('Robot costmap cost: ',ODcp[(ncm-ncm//2-1)*ncm + ncm//2])
-        print('VFH wp costmap cost: ',CWP)
-        print('VFH waypoint indices',Ind)
+        # print('VFH waypoint: ',xyvfh)
+        # print('VFH waypoint pose: ',psivfh)
+        # print('Robot costmap cost: ',ODcp[(ncm-ncm//2-1)*ncm + ncm//2])
+        # print('VFH wp costmap cost: ',CWP)
+        # print('VFH waypoint indices',Ind)
         # print('THETAWP: ',THETAWP)
         # print('THETAG: ',THETAG)
         # print('THETAWP0: ',THETAWP0)
@@ -246,7 +261,6 @@ class VFH:
         #Publish VFH paypoint
         wp = Float32MultiArray()
         wp.data = xyvfh
-        # print(wp)
         self.vfh_pub.publish(wp)
 
         #Send VFH waypoint to a blue marker publisher

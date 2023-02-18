@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Marker1
-        - /Marker2
       Splitter Ratio: 0.5
     Tree Height: 719
   - Class: rviz/Selection
@@ -237,7 +236,7 @@ Visualization Manager:
       Marker Topic: visualization_marker
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -245,14 +244,14 @@ Visualization Manager:
       Marker Topic: /goal_marker
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -276,7 +275,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.725176811218262
+      Distance: 7.972789287567139
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -284,17 +283,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.07095873355865479
-        Y: 0.584007740020752
-        Z: -0.4009101390838623
+        X: -0.0005723908543586731
+        Y: -0.026068080216646194
+        Z: -0.40098392963409424
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5997977256774902
+      Pitch: 0.07979729026556015
       Target Frame: <Fixed Frame>
-      Yaw: 1.1704063415527344
+      Yaw: 3.200411796569824
     Saved: ~
 Window Geometry:
   Displays:
