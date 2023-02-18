@@ -1,9 +1,9 @@
 vfh:
   dia: 0.2
   LA: 10
-  wg: 3
-  wd: 1
+  wg: 10
+  wd: 4
   wo: 1
-  crit_cost: 80
+  crit_cost: 70
   ndpsi: 36
   ncm: 20
