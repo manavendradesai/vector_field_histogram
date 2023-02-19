@@ -36,7 +36,7 @@ class VFH:
         self.ds = rospy.get_param('/move_base/local_costmap/resolution',0.05)
 
         #Get initial position and pose
-        self.xR0 = np.array([0,0.75])
+        self.xR0 = np.array([-2.3,0.5])
 
         #Initialize previous waypoint position and pose
         self.xyvfh0 = self.xR0
@@ -161,17 +161,11 @@ class VFH:
                 #Row shift
                 rs = npts*np.sin(theta)
 
-                # print('CS', cs)
-                # print('RS',rs)
-
                 #Indices
                 csg = np.ceil(ncm//2 + cs)
                 rsg = np.floor(ncm//2 + rs)
 
                 I = np.int_(rsg*ncm + csg - 1)
-
-                # print('CSG',csg)
-                # print('RSG',rsg)
 
                 #Retrieve costs at these indices
                 cJ = ODcp[I]
@@ -192,11 +186,8 @@ class VFH:
                     #thetawp = theta
                     #Robot heading to previous waypoint
                     thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
+                    
                     #Calculate VFH cost at the candidate waypoint
-                    # J1 = wg*(np.abs(thetag-thetawp))
-                    # J2 = wd*(np.abs(thetawp-thetawp0))
-                    # J3 = wo*(np.abs(psiR-thetawp))
-
                     # a = targetA - sourceA
                     # a = (a + 180) % 360 - 180
 
