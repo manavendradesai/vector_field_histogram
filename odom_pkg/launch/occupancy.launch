@@ -1,0 +1,13 @@
+<launch>
+
+<!-- Launch move_base, AMCL and teleop nodes -->
+<!-- <include file = "$(find vector_field_histogram)/launch/costmap.launch"/> -->
+   <include file = "$(find odom_pkg)/launch/costmap.launch"/>
+
+<!-- Load VFH parameters -->
+<!-- <rosparam file = "$(find vector_field_histogram)/param/vfhwp.yaml"/> -->
+
+<!-- Launch vfh node -->
+<node name="nav_msg_odometry" pkg="odom_pkg" type="nav_msg_odometry.py" output="screen"/>
+
+</launch>
