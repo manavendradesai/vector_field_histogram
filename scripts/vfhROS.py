@@ -245,7 +245,7 @@ class VFH:
 
         #Publish VFH paypoint
         wp = Float32MultiArray()
-        wp.data = xyvfh
+        wp.data = np.array([xyvfh[0],xyvfh[1],psivfh],dtype=Float32MultiArray)
         self.vfh_pub.publish(wp)
 
         #Send VFH waypoint to a blue marker publisher
