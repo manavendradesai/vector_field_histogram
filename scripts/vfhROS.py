@@ -41,9 +41,6 @@ class VFH:
         #Initialize previous waypoint position and pose
         self.xyvfh0 = self.xR0
 
-        #Iteration counter
-        self.iter = 0
-
         #Define subscriber to odom
         self.odom_sub = rospy.Subscriber("/odom",Odometry,self.robot_pose)
         #Define flag
@@ -136,9 +133,6 @@ class VFH:
         CWP = 0
         Ind = 0
 
-        self.iter = self.iter + 1
-        print('Iteration: ', self.iter)
-
         #Initialize VFH cost
         Jvfh = 10000
 
@@ -201,14 +195,14 @@ class VFH:
 
                     J = J1 + J2 + J3
 
-                    print('Cand. VFH waypoint: ',np.array([cwx,cwy]))
-                    print('Cand. VFH waypoint pose: ',thetawp)
-                    print('Robot to Goal pose: ',thetag)
-                    print('Cand. VFH cost wg: ',J1)
-                    print('Cand. VFH cost wd: ',J2)
-                    print('Cand. VFH cost wo: ',J3)
-                    print('Cand. VFH cost: ',J)
-                    print('Cand. costmap cost: ', cJ[-1])
+                    # print('Cand. VFH waypoint: ',np.array([cwx,cwy]))
+                    # print('Cand. VFH waypoint pose: ',thetawp)
+                    # print('Robot to Goal pose: ',thetag)
+                    # print('Cand. VFH cost wg: ',J1)
+                    # print('Cand. VFH cost wd: ',J2)
+                    # print('Cand. VFH cost wo: ',J3)
+                    # print('Cand. VFH cost: ',J)
+                    # print('Cand. costmap cost: ', cJ[-1])
 
                     #Compare candidate waypoint cost and current minimum
                     if J<=Jvfh:
@@ -229,8 +223,8 @@ class VFH:
         else:
             xyvfh = np.array(xG,dtype=Float32MultiArray)
             psivfh = psiG
-            print('Cand. VFH waypoint: ',xyvfh)
-            print('Cand. VFH waypoint pose: ',psivfh)
+            # print('Cand. VFH waypoint: ',xyvfh)
+            # print('Cand. VFH waypoint pose: ',psivfh)
             # THETAWP = thetawp
             # THETAG = thetag
             # THETAWP0 = thetawp0
@@ -270,7 +264,7 @@ class VFH:
         #Define marker
         self.marker = Marker()
 
-        self.marker.header.frame_id = "odom"
+        self.marker.header.frame_id = "map"
         self.marker.header.stamp = rospy.Time.now()
 
         self.marker.type = 0
@@ -305,7 +299,7 @@ class VFH:
         #Define marker
         self.marker = Marker()
 
-        self.marker.header.frame_id = "odom"
+        self.marker.header.frame_id = "map"
         self.marker.header.stamp = rospy.Time.now()
 
         self.marker.type = 0
@@ -337,7 +331,7 @@ class VFH:
 
 if __name__ == '__main__':
     #Initialize node
-    rospy.init_node('vfhwp',anonymous=True)
+    rospy.init_node('vfhROS',anonymous=True)
 
     try:
 

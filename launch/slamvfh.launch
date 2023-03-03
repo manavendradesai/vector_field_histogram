@@ -79,6 +79,6 @@
 
 
 <!-- Launch vfh node -->
-<node name="vfhwp" pkg="vector_field_histogram" type="vfhwp.py" output="screen"/>
+<node name="vfhROS" pkg="vector_field_histogram" type="vfhROS.py" output="screen"/>
 
 </launch>
