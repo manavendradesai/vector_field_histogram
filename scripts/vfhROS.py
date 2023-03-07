@@ -3,9 +3,9 @@ import rospy
 import numpy as np
 from visualization_msgs.msg import Marker
 from nav_msgs.msg import OccupancyGrid
-from map_msgs.msg import OccupancyGridUpdate
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32MultiArray 
+from geometry_msgs.msg import PoseStamped
+from tf.transformations import quaternion_from_euler
 
 class VFH:
 
@@ -49,14 +49,12 @@ class VFH:
         #Define subscriber to local_costmap data
         self.local_costmap_sub = rospy.Subscriber("/move_base/local_costmap/costmap",
         OccupancyGrid,self.local_costmap)
-        # self.local_costmap_sub = rospy.Subscriber("/move_base/local_costmap/costmap_updates",
-        # OccupancyGridUpdate,self.local_costmap)
 
         #Define flag 
         self.fcost = False
 
         #Define publisher for VFH waypont
-        self.vfh_pub = rospy.Publisher("/vfh/waypoint",Float32MultiArray,queue_size=2)
+        self.vfh_pub = rospy.Publisher("/vfh/waypoint",PoseStamped,queue_size=2)
 
         #Define publisher for VFH waypoint marker
         self.marker_pub = rospy.Publisher("/visualization_marker",Marker,queue_size=2)
@@ -207,7 +205,7 @@ class VFH:
                     #Compare candidate waypoint cost and current minimum
                     if J<=Jvfh:
                         #Update candidate waypoint and min VFH cost
-                        xyvfh = np.array([cwx,cwy],dtype=Float32MultiArray)
+                        xyvfh = np.array([cwx,cwy])
                         psivfh = thetawp
                         Jvfh = J
 
@@ -221,7 +219,7 @@ class VFH:
                         # RS = rs
 
         else:
-            xyvfh = np.array(xG,dtype=Float32MultiArray)
+            xyvfh = np.array(xG)
             psivfh = psiG
             # print('Cand. VFH waypoint: ',xyvfh)
             # print('Cand. VFH waypoint pose: ',psivfh)
@@ -244,8 +242,20 @@ class VFH:
         # print('psi: ',psiR)
 
         #Publish VFH paypoint
-        wp = Float32MultiArray()
-        wp.data = np.array([xyvfh[0],xyvfh[1],psivfh],dtype=Float32MultiArray)
+        wp = PoseStamped()
+        wp.header.frame_id = "map"
+        wp.pose.position.x = xyvfh[0]
+        wp.pose.position.y = xyvfh[1]
+        wp.pose.position.z = 0
+
+        #Convert to quaternion angle
+        q = quaternion_from_euler(0.0, 0.0, psivfh)
+        
+        wp.pose.orientation.x = q[0]
+        wp.pose.orientation.y = q[1]
+        wp.pose.orientation.z = q[2]
+        wp.pose.orientation.z = q[3]
+
         self.vfh_pub.publish(wp)
 
         #Send VFH waypoint to a blue marker publisher

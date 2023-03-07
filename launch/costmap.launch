@@ -45,7 +45,7 @@ to positon the global and local costmaps -->
             -x $(arg x) -y $(arg y) -z $(arg z)
             -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
 
-<!-- AMCL --> 
+<!-- AMCL  -->
 <include file="$(find turtlebot3_navigation)/launch/amcl.launch" >
 <arg name="initial_pose_x" value="$(arg x)"/>
 <arg name="initial_pose_y" value="$(arg y)"/>
@@ -58,7 +58,7 @@ to positon the global and local costmaps -->
 </include>
 
 <!-- Launch teleop node in a separate terminal -->
-<include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/>
+<!-- <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/> -->
 
 <!--launch rviz-->
 <group if="$(arg open_rviz)"> 
