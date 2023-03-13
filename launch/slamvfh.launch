@@ -1,3 +1,6 @@
+<!-- This launch file launches nodes to implement VFH when the turtlebot is in an
+unmapped surrounding -->
+
 <launch>
 
 <!-- Arguments -->

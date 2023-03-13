@@ -1,1 +1,0 @@
-#Implement a DWA inpsired local path planner from scratch and publish velocity commands.

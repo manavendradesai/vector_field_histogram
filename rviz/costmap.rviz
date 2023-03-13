@@ -236,12 +236,28 @@ Visualization Manager:
       Marker Topic: visualization_marker
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /goal_marker
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /local_planner/dwa_planner/candidate_trajectories
+      Name: MarkerArray
+      Namespaces:
+        /local_planner/dwa_planner/candidate_trajectories: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /local_planner/dwa_planner/selected_trajectory
       Name: Marker
       Namespaces:
         {}

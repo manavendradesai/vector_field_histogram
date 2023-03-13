@@ -3,6 +3,7 @@ import rospy
 import numpy as np
 from visualization_msgs.msg import Marker
 from nav_msgs.msg import OccupancyGrid
+from map_msgs.msg import OccupancyGridUpdate
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from tf.transformations import quaternion_from_euler
@@ -47,8 +48,8 @@ class VFH:
         self.fodom = False
 
         #Define subscriber to local_costmap data
-        self.local_costmap_sub = rospy.Subscriber("/move_base/local_costmap/costmap",
-        OccupancyGrid,self.local_costmap)
+        self.local_costmap_sub = rospy.Subscriber("/move_base/local_costmap/costmap_updates",
+        OccupancyGridUpdate,self.local_costmap)
 
         #Define flag 
         self.fcost = False
@@ -254,7 +255,7 @@ class VFH:
         wp.pose.orientation.x = q[0]
         wp.pose.orientation.y = q[1]
         wp.pose.orientation.z = q[2]
-        wp.pose.orientation.z = q[3]
+        wp.pose.orientation.w = q[3]
 
         self.vfh_pub.publish(wp)
 
