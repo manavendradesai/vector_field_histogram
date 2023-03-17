@@ -13,18 +13,23 @@ class VFH:
     def __init__(self):
 
         #Get parameters
-        #Robot diameter
-        self.dia = rospy.get_param('/vfh/dia',0.2)
+
         #VFH weights
         self.wg = rospy.get_param('/vfh/wg',10)
         self.wo = rospy.get_param('/vfh/wo',7)
         self.wd = rospy.get_param('/vfh/wd',1)
+
         #Lookahead distance
         self.LA = rospy.get_param('/vfh/LA',10)
         #VFH critical cost
         self.crit_cost = rospy.get_param('/vfh/crit_cost',75)
+        #Costmap size
+        self.l = rospy.get_param('/costmap_2d/costmap/width',3)
+        #Get local costmap resolution
+        self.ds = rospy.get_param('/costmap_2d/costmap/resolution',0.1)
+
         #Number of grid cells along one edge
-        self.ncm = rospy.get_param('/vfh/ncm',20)
+        self.ncm = self.l//self.ds
 
         #Angle discretization
         self.ndpsi = rospy.get_param('/vfh/ndpsi',72)
@@ -33,11 +38,9 @@ class VFH:
         self.xG = np.array([1.75,0.75])
         self.psiG = np.mod(2*np.pi + np.pi/2,2*np.pi)
 
-        #Get local costmap resolution
-        self.ds = rospy.get_param('/move_base/local_costmap/resolution',0.05)
-
-        #Get initial position and pose
-        self.xR0 = np.array([-2.3,0.5])
+        #Get initial position. Get this from some topic.
+        # self.xR0 = np.array([-2.3,0.5])
+        self.xR0 = self.xG
 
         #Initialize previous waypoint position and pose
         self.xyvfh0 = self.xR0
@@ -48,7 +51,7 @@ class VFH:
         self.fodom = False
 
         #Define subscriber to local_costmap data
-        self.local_costmap_sub = rospy.Subscriber("/move_base/local_costmap/costmap_updates",
+        self.local_costmap_sub = rospy.Subscriber("/costmap_2d/costmap/costmap_updates",
         OccupancyGridUpdate,self.local_costmap)
 
         #Define flag 
@@ -137,8 +140,7 @@ class VFH:
 
         #Discretize forward motion
         #Distance to goal in terms of grid cells
-        # d2G = np.int(np.linalg.norm(xyR-xG)/ds)
-        d2G = int(np.linalg.norm(xyR-xG)/ds)
+        d2G = np.int(np.linalg.norm(xyR-xG)/ds)
 
         #Check if goal is further than lookahead distance
         if d2G>LA:

@@ -2,30 +2,25 @@
 
 <launch>
 
+<!-- Set model name -->
+<arg name="model" default="burger" doc="model type burger"/>
+<param name="model" value="burger"/>
+<remap from="cmd_vel" to="/move_base/cmd_vel"/>
+
 <!-- Launch gazebo_2d.launch and set world -->
 <include file = "$(find karina_description)/launch/gazebo_2d.launch">
 <arg name="world" value="map7"/>
 </include>
 
-<!-- Launch move_base -->
-<!-- Arguments -->
-<!-- <arg name="model" default="burger" />
-<arg name="cmd_vel_topic" default="/cmd_vel_mb" />
-<arg name="odom_topic" default="/odom" />
-<arg name="move_forward_only" default="false"/> -->
+<!-- Load VFH parameters -->
+<rosparam file = "$(find vector_field_histogram)/param/vfhwp.yaml"/>
 
-<!-- move_base -->
-<!-- <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-<param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
-<rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
-<rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="local_costmap" />
-<rosparam file="$(find turtlebot3_navigation)/param/local_costmap_params.yaml" command="load" />
-<rosparam file="$(find turtlebot3_navigation)/param/global_costmap_params.yaml" command="load" />
-<rosparam file="$(find turtlebot3_navigation)/param/move_base_params.yaml" command="load" />
-<rosparam file="$(find turtlebot3_navigation)/param/dwa_local_planner_params_$(arg model).yaml" command="load" />
-<remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
-<remap from="odom" to="$(arg odom_topic)"/>
-<param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
-</node> -->
+<!-- Launch VFH node -->
+
+<!-- Launch teleop node in a separate terminal -->
+<!-- turtlebot3_teleop_key already has its own built in velocity smoother -->
+<node pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" name="turtlebot3_teleop_keyboard"  output="screen" launch-prefix="xterm -e">
+</node>
+
 
 </launch>
