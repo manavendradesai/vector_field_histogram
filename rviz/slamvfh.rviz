@@ -230,6 +230,22 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /local_planner/dwa_planner/candidate_trajectories
+      Name: MarkerArray
+      Namespaces:
+        /local_planner/dwa_planner/candidate_trajectories: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /local_planner/dwa_planner/selected_trajectory
+      Name: Marker
+      Namespaces:
+        /local_planner/dwa_planner/selected_trajectory: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

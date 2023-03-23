@@ -20,7 +20,7 @@ class VFH:
         self.wd = rospy.get_param('/vfh/wd',1)
 
         #Lookahead distance
-        self.LA = rospy.get_param('/vfh/LA',10)
+        self.LA = rospy.get_param('/vfh/LA',15)
         #VFH critical cost
         self.crit_cost = rospy.get_param('/vfh/crit_cost',75)
         #Costmap size
@@ -35,7 +35,7 @@ class VFH:
         self.ndpsi = rospy.get_param('/vfh/ndpsi',72)
 
         #Get goal
-        self.xG = np.array([1.75,0.75])
+        self.xG = np.array([30,-30])
         self.psiG = np.mod(2*np.pi + np.pi/2,2*np.pi)
 
         #Get initial position. Get this from some topic.
@@ -51,8 +51,11 @@ class VFH:
         self.fodom = False
 
         #Define subscriber to local_costmap data
-        self.local_costmap_sub = rospy.Subscriber("/costmap_2d/costmap/costmap_updates",
-        OccupancyGridUpdate,self.local_costmap)
+        # self.local_costmap_sub = rospy.Subscriber("/costmap_2d/costmap/costmap_updates",
+        # OccupancyGridUpdate,self.local_costmap)
+
+        self.local_costmap_sub = rospy.Subscriber("/costmap_2d/costmap/costmap",
+        OccupancyGrid,self.local_costmap)
 
         #Define flag 
         self.fcost = False
@@ -140,7 +143,7 @@ class VFH:
 
         #Discretize forward motion
         #Distance to goal in terms of grid cells
-        d2G = np.int(np.linalg.norm(xyR-xG)/ds)
+        d2G = int(np.linalg.norm(xyR-xG)/ds)
 
         #Check if goal is further than lookahead distance
         if d2G>LA:

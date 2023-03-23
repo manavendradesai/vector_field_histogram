@@ -1,3 +1,6 @@
+<!-- Use this launch file to implement the VFH algorithm in a pre-mapped environment using
+costmap.launch -->
+
 <launch>
 
 <!-- Launch move_base, AMCL and teleop nodes -->
@@ -7,6 +10,8 @@
 <rosparam file = "$(find vector_field_histogram)/param/vfhwp.yaml"/>
 
 <!-- Launch vfh node -->
-<node name="vfhROS" pkg="vector_field_histogram" type="vfhROS.py" output="screen"/>
+<!-- <node name="vfhROS" pkg="vector_field_histogram" type="vfhROS.py" output="screen"/> -->
+
+<node name="vfhROSDWA" pkg="vector_field_histogram" type="vfhROSDWA.py" output="screen"/>
 
 </launch>

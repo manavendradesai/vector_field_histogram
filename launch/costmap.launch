@@ -17,8 +17,8 @@ to positon the global and local costmaps -->
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
   
   <!-- Robot pose -->
-  <arg name="x" default="0"/>
-  <arg name="y" default="0.75"/>
+  <arg name="x" default="-1"/>
+  <arg name="y" default="-2"/>
   <arg name="z" default="0"/>
   <arg name="roll" default="0"/>
   <arg name="pitch" default="0"/>

@@ -23,7 +23,7 @@ class VFH:
         #Lookahead distance
         self.LA = rospy.get_param('/vfh/LA',10)
         #VFH critical cost
-        self.crit_cost = rospy.get_param('/vfh/crit_cost',75)
+        self.crit_cost = rospy.get_param('/vfh/crit_cost',70)
         #Number of grid cells along one edge
         self.ncm = rospy.get_param('/vfh/ncm',20)
 
@@ -38,13 +38,13 @@ class VFH:
         self.ds = rospy.get_param('/move_base/local_costmap/resolution',0.05)
 
         #Get initial position and pose
-        self.xR0 = np.array([-2,-1])
+        self.xR0 = np.array([-1,-2])
 
         #Initialize previous waypoint position and pose
         self.xyvfh0 = self.xR0
 
-        #Define subscriber to odom
-        self.odom_sub = rospy.Subscriber("/odom",Odometry,self.robot_pose)
+        #Define subscriber to amcl_pose
+        self.odom_sub = rospy.Subscriber("/amcl_pose",PoseWithCovarianceStamped,self.robot_pose)
         #Define flag
         self.fodom = False
 
@@ -344,7 +344,7 @@ class VFH:
 
 if __name__ == '__main__':
     #Initialize node
-    rospy.init_node('vfhROS',anonymous=True)
+    rospy.init_node('vfhROSDWA',anonymous=True)
 
     try:
 
