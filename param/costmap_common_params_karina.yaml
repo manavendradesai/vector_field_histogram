@@ -6,8 +6,8 @@ footprint: [[0.5016, 0.36068], [0.5016, -0.36068], [0.2016, -0.36068], [0.2016, 
 
 global_frame: odom
 robot_base_frame: base_link
-width: 3.0
-height: 3.0
+width: 4.0
+height: 4.0
 origin_x: -1.0
 origin_y: -2.0
 resolution: 0.1

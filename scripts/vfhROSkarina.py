@@ -35,8 +35,8 @@ class VFH:
         self.ndpsi = rospy.get_param('/vfh/ndpsi',72)
 
         #Get goal
-        self.xG = np.array([30,-30])
-        self.psiG = np.mod(2*np.pi + np.pi/2,2*np.pi)
+        self.xG = np.array([40,-36])
+        self.psiG = np.mod(2*np.pi - np.pi/2,2*np.pi)
 
         #Get initial position. Get this from some topic.
         # self.xR0 = np.array([-2.3,0.5])
@@ -250,7 +250,7 @@ class VFH:
 
         #Publish VFH paypoint
         wp = PoseStamped()
-        wp.header.frame_id = "map"
+        wp.header.frame_id = "odom"
         wp.pose.position.x = xyvfh[0]
         wp.pose.position.y = xyvfh[1]
         wp.pose.position.z = 0
@@ -281,7 +281,7 @@ class VFH:
         #Define marker
         self.marker = Marker()
 
-        self.marker.header.frame_id = "map"
+        self.marker.header.frame_id = "odom"
         self.marker.header.stamp = rospy.Time.now()
 
         self.marker.type = 0
@@ -316,7 +316,7 @@ class VFH:
         #Define marker
         self.marker = Marker()
 
-        self.marker.header.frame_id = "map"
+        self.marker.header.frame_id = "odom"
         self.marker.header.stamp = rospy.Time.now()
 
         self.marker.type = 0

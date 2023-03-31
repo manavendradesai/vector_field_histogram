@@ -1,4 +1,4 @@
-<!-- This launch file launches node to simulate Karina with the VFH and move_base -->
+<!-- This launch file launches node to simulate Karina with the VFH node -->
 
 <launch>
 
@@ -13,7 +13,7 @@
 </include>
 
 <!-- Load VFH parameters -->
-<rosparam file = "$(find vector_field_histogram)/param/vfhwp.yaml"/>
+<rosparam file = "$(find vector_field_histogram)/param/vfhwpkarina.yaml"/>
 
 <!-- Launch VFH node -->
 
