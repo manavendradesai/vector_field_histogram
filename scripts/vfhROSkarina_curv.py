@@ -83,6 +83,13 @@ class VFH:
         #Set flag to true
         self.fodom = True
 
+        # #Print prohibited radius of curvature
+        # v = pose_msg.twist.twist.linear.x
+        # omega = pose_msg.twist.twist.angular.z
+        # R = v/(omega+0.001)
+        # print(R)
+
+
     #Recieve local costmap data
     #local_costmap is postioned in /odom frame
     def local_costmap(self,costmap_msg):
@@ -150,7 +157,18 @@ class VFH:
         #Check if goal is further than lookahead distance
         if d2G>LA:
 
-            npts = np.arange(3,LA,dtype=int)
+            # npts = np.arange(3,LA,dtype=int)
+            npts = np.arange(3,20,dtype=int)
+
+            #Curvature restrictions
+            #Prohibitive curvature (in m)
+            R = 0.5
+            #Center of circle on the right
+            xprc = xyR[0] + R*np.sin(psiR)
+            yprc = xyR[1] - R*np.cos(psiR)
+            #Center of circle on the left
+            xplc = xyR[0] - R*np.sin(psiR)
+            yplc = xyR[1] + R*np.cos(psiR)
 
             for theta in vfhpsi:
                 #Get indices in 1-D costmap array
@@ -177,55 +195,65 @@ class VFH:
 
                     #Jump to furthest grid cell along direction theta
                     #Candidate waypoint xy coordinates in world frame
-                    cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
-                    cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
+                    # cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
+                    # cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
+
+                    cwx = xyR[0] + ds*LA*np.cos(theta)
+                    cwy = xyR[1] + ds*LA*np.sin(theta)
                     
-                    #Robot heading to goal
-                    thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
-                    #Robot heading to candidate waypoint
-                    thetawp = np.mod(2*np.pi + np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)), 2*np.pi) 
-                    #thetawp = theta
-                    #Robot heading to previous waypoint
-                    thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
-                    
-                    #Calculate VFH cost at the candidate waypoint
-                    # a = targetA - sourceA
-                    # a = (a + 180) % 360 - 180
+                    #Check if furthest point is outside prohibitive curvatures
+                    d2lc = ((xplc-cwx)**2 + (yplc-cwy)**2)**0.5
+                    d2rc = ((xprc-cwx)**2 + (yprc-cwy)**2)**0.5
 
-                    sd = np.array([thetag,thetawp0,psiR])
-                    sd = sd - thetawp
-                    sd = np.abs(np.mod((sd + np.pi),2*np.pi) - np.pi)
+                    #Classify as VFH candidate only if outside curvature
+                    if d2lc>R and d2rc>R:
+                        
+                        #Robot heading to goal
+                        thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
+                        #Robot heading to candidate waypoint
+                        thetawp = np.mod(2*np.pi + np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)), 2*np.pi) 
+                        #thetawp = theta
+                        #Robot heading to previous waypoint
+                        thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
+                        
+                        #Calculate VFH cost at the candidate waypoint
+                        # a = targetA - sourceA
+                        # a = (a + 180) % 360 - 180
 
-                    J1 = wg*sd[0]
-                    J2 = wd*sd[1]
-                    J3 = wo*sd[2]
+                        sd = np.array([thetag,thetawp0,psiR])
+                        sd = sd - thetawp
+                        sd = np.abs(np.mod((sd + np.pi),2*np.pi) - np.pi)
 
-                    J = J1 + J2 + J3
+                        J1 = wg*sd[0]
+                        J2 = wd*sd[1]
+                        J3 = wo*sd[2]
 
-                    # print('Cand. VFH waypoint: ',np.array([cwx,cwy]))
-                    # print('Cand. VFH waypoint pose: ',thetawp)
-                    # print('Robot to Goal pose: ',thetag)
-                    # print('Cand. VFH cost wg: ',J1)
-                    # print('Cand. VFH cost wd: ',J2)
-                    # print('Cand. VFH cost wo: ',J3)
-                    # print('Cand. VFH cost: ',J)
-                    # print('Cand. costmap cost: ', cJ[-1])
+                        J = J1 + J2 + J3
 
-                    #Compare candidate waypoint cost and current minimum
-                    if J<=Jvfh:
-                        #Update candidate waypoint and min VFH cost
-                        xyvfh = np.array([cwx,cwy])
-                        psivfh = thetawp
-                        Jvfh = J
+                        # print('Cand. VFH waypoint: ',np.array([cwx,cwy]))
+                        # print('Cand. VFH waypoint pose: ',thetawp)
+                        # print('Robot to Goal pose: ',thetag)
+                        # print('Cand. VFH cost wg: ',J1)
+                        # print('Cand. VFH cost wd: ',J2)
+                        # print('Cand. VFH cost wo: ',J3)
+                        # print('Cand. VFH cost: ',J)
+                        # print('Cand. costmap cost: ', cJ[-1])
 
-                        #Debuggers
-                        # THETAWP = thetawp
-                        # THETAG = thetag
-                        # THETAWP0 = thetawp0
-                        CWP = cJ
-                        # Ind = I
-                        # CS = cs
-                        # RS = rs
+                        #Compare candidate waypoint cost and current minimum
+                        if J<=Jvfh:
+                            #Update candidate waypoint and min VFH cost
+                            xyvfh = np.array([cwx,cwy])
+                            psivfh = thetawp
+                            Jvfh = J
+
+                            #Debuggers
+                            # THETAWP = thetawp
+                            # THETAG = thetag
+                            # THETAWP0 = thetawp0
+                            CWP = cJ
+                            # Ind = I
+                            # CS = cs
+                            # RS = rs
 
         else:
             xyvfh = np.array(xG)

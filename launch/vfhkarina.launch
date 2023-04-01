@@ -13,7 +13,7 @@
 </include>
 
 <!-- Load VFH parameters -->
-<rosparam file = "$(find vector_field_histogram)/param/vfhwpkarina.yaml"/>
+<!-- <rosparam file = "$(find vector_field_histogram)/param/vfhwpkarina.yaml"/> -->
 
 <!-- Launch VFH node -->
 

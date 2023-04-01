@@ -1,7 +1,7 @@
 vfh:
-  LA: 20
+  LA: 15
   wg: 10
   wd: 1
   wo: 7
-  crit_cost: 60
+  crit_cost: 80
   ndpsi: 72

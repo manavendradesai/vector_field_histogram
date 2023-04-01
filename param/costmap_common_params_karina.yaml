@@ -16,8 +16,8 @@ publish_frequency: 5
 transform_tolerance: 0.5
 always_send_full_costmap: true
 rolling_window: true
-inflation_radius: 1.5
-cost_scaling_factor: 3
+inflation_radius: 2
+cost_scaling_factor: 1
 
 plugins:
     - {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
