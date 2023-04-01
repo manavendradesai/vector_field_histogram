@@ -22,20 +22,22 @@ class VFH:
         #Lookahead distance
         self.LA = rospy.get_param('/vfh/LA',15)
         #VFH critical cost
-        self.crit_cost = rospy.get_param('/vfh/crit_cost',75)
+        self.crit_cost = rospy.get_param('/vfh/crit_cost',60)
         #Costmap size
-        self.l = rospy.get_param('/costmap_2d/costmap/width',3)
+        self.l = rospy.get_param('/costmap_2d/costmap/width',4)
         #Get local costmap resolution
         self.ds = rospy.get_param('/costmap_2d/costmap/resolution',0.1)
 
         #Number of grid cells along one edge
-        self.ncm = self.l//self.ds
+        self.ncm = int(round(self.l/self.ds))
+
+        print(self.ncm)
 
         #Angle discretization
         self.ndpsi = rospy.get_param('/vfh/ndpsi',72)
 
         #Get goal
-        self.xG = np.array([40,-36])
+        self.xG = np.array([42,-36])
         self.psiG = np.mod(2*np.pi - np.pi/2,2*np.pi)
 
         #Get initial position. Get this from some topic.
@@ -238,10 +240,10 @@ class VFH:
         self.xyvfh0 = xyvfh
 
         #Print waypoint coordinate and cost
-        # print('VFH waypoint: ',xyvfh)
-        # print('VFH waypoint pose: ',psivfh)
+        print('VFH waypoint: ',xyvfh)
+        print('VFH waypoint pose: ',psivfh)
         # print('Robot costmap cost: ',ODcp[(ncm-ncm//2-1)*ncm + ncm//2])
-        # print('VFH wp costmap cost: ',CWP)
+        print('VFH wp costmap cost: ',CWP)
         # print('VFH waypoint indices',Ind)
         # print('THETAWP: ',THETAWP)
         # print('THETAG: ',THETAG)
@@ -291,9 +293,9 @@ class VFH:
         self.marker.scale.y = 0.05
         self.marker.scale.z = 0.05
 
-        self.marker.color.r = 0
-        self.marker.color.g = 0
-        self.marker.color.b = 1
+        self.marker.color.r = 1
+        self.marker.color.g = 1
+        self.marker.color.b = 0
         self.marker.color.a = 1
 
         psiR = wppsi

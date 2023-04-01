@@ -6,8 +6,8 @@ footprint: [[0.5016, 0.36068], [0.5016, -0.36068], [0.2016, -0.36068], [0.2016, 
 
 global_frame: odom
 robot_base_frame: base_link
-width: 4.0
-height: 4.0
+width: 6.0
+height: 6.0
 origin_x: -1.0
 origin_y: -2.0
 resolution: 0.1
@@ -16,8 +16,8 @@ publish_frequency: 5
 transform_tolerance: 0.5
 always_send_full_costmap: true
 rolling_window: true
-inflation_radius: 1
-cost_scaling_factor: 3.0
+inflation_radius: 1.5
+cost_scaling_factor: 3
 
 plugins:
     - {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
@@ -30,4 +30,5 @@ plugins:
 obstacle_layer:
     observation_sources: scan1 scan2
     scan1: {sensor_frame: velodyne, data_type: LaserScan, topic: /scan, marking: true, clearing: true, observation_persistence: 0, obstacle_range: 3.0, raytrace_range: 3.5, min_obstacle_height: 0.0}
+    # scan2: {sensor_frame: lane_scan_frame, data_type: LaserScan, topic: /img_to_laser/lane_scan, marking: true, clearing: true, observation_persistence: 0, obstacle_range: 3.0, raytrace_range: 3.5, min_obstacle_height: 0.0, inf_is_valid: true}
     scan2: {sensor_frame: lane_scan_frame, data_type: LaserScan, topic: /img_to_laser/lane_scan, marking: true, clearing: true, observation_persistence: 0, obstacle_range: 3.0, raytrace_range: 3.5, min_obstacle_height: 0.0}
