@@ -5,6 +5,7 @@ from visualization_msgs.msg import Marker
 from nav_msgs.msg import OccupancyGrid
 from map_msgs.msg import OccupancyGridUpdate
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped
 from tf.transformations import quaternion_from_euler
 
@@ -22,16 +23,16 @@ class VFH:
         #Lookahead distance
         self.LA = rospy.get_param('/vfh/LA',15)
         #VFH critical cost
-        self.crit_cost = rospy.get_param('/vfh/crit_cost',60)
+        self.crit_cost = rospy.get_param('/vfh/crit_cost',80)
         #Costmap size
-        self.l = rospy.get_param('/costmap_2d/costmap/width',4)
+        self.l = rospy.get_param('/costmap_2d/costmap/width',8)
         #Get local costmap resolution
         self.ds = rospy.get_param('/costmap_2d/costmap/resolution',0.1)
 
         #Number of grid cells along one edge
         self.ncm = int(round(self.l/self.ds))
 
-        print(self.ncm)
+        # print(self.ncm)
 
         #Angle discretization
         self.ndpsi = rospy.get_param('/vfh/ndpsi',72)
@@ -62,6 +63,11 @@ class VFH:
         #Define flag 
         self.fcost = False
 
+        #Define subscriber to img_to_laser/lane_scan
+        self.lane_scan_sub = rospy.Subscriber("/img_to_laser/lane_scan",LaserScan,self.lane_scan)
+        #Define flag
+        self.flane_scan = False
+
         #Define publisher for VFH waypont
         self.vfh_pub = rospy.Publisher("/vfh/waypoint",PoseStamped,queue_size=2)
 
@@ -83,12 +89,14 @@ class VFH:
         #Set flag to true
         self.fodom = True
 
-        # #Print prohibited radius of curvature
-        # v = pose_msg.twist.twist.linear.x
-        # omega = pose_msg.twist.twist.angular.z
-        # R = v/(omega+0.001)
-        # print(R)
+    #Receive lane scan data 
+    def lane_scan(self,lane):
+        self.lane_scanned = np.array(lane.ranges)
 
+        # print(self.lane_scanned)
+
+        #Set flag to true
+        self.flane_scan = True
 
     #Recieve local costmap data
     #local_costmap is postioned in /odom frame
@@ -98,7 +106,7 @@ class VFH:
         #Set flag to true
         self.fcost = True
 
-        if self.fodom:
+        if self.fodom and self.flane_scan:
             self.pub_VFHwp()
 
     #Determine VFH waypoint
@@ -157,56 +165,75 @@ class VFH:
         #Check if goal is further than lookahead distance
         if d2G>LA:
 
-            # npts = np.arange(3,LA,dtype=int)
-            npts = np.arange(3,20,dtype=int)
+            npts = np.arange(3,LA,dtype=int)
 
-            #Curvature restrictions
-            #Prohibitive curvature (in m)
-            R = 0.5
-            #Center of circle on the right
-            xprc = xyR[0] + R*np.sin(psiR)
-            yprc = xyR[1] - R*np.cos(psiR)
-            #Center of circle on the left
-            xplc = xyR[0] - R*np.sin(psiR)
-            yplc = xyR[1] + R*np.cos(psiR)
+            #Filter heading within lane_scan
+            lane_scanned = self.lane_scanned
+            min_range = 1.5
+            max_range = 5
+            lane_scanned_filtered = np.where(np.logical_and(lane_scanned>=min_range, lane_scanned<=max_range))
 
-            for theta in vfhpsi:
-                #Get indices in 1-D costmap array
-                #Get relative xy positions of each cell in world frame
-                #in grid cell count
+            print(np.array(lane_scanned_filtered).size)
+            
+            if np.array(lane_scanned_filtered).size>1:
+
                 
-                #Column shift
-                cs = npts*np.cos(theta)
-                #Row shift
-                rs = npts*np.sin(theta)
 
-                #Indices
-                csg = np.ceil(ncm//2 + cs)
-                rsg = np.floor(ncm//2 + rs)
+                #We see sufficient lane to go ahead with VFH for lane-keeping
 
-                I = np.int_(rsg*ncm + csg - 1)
+                #Max forward heading relative to the robot 
+                max_heading_angle = -np.pi/179*np.min(lane_scanned_filtered) + np.pi/2 
+                #Min forward heading relative to the robot 
+                min_heading_angle = -np.pi/179*np.max(lane_scanned_filtered) + np.pi/2 
 
-                #Retrieve costs at these indices
-                cJ = ODcp[I]
+                print(max_heading_angle)
+                print(min_heading_angle)
 
+                #vfhpsi relative to the robot
+                vfhpsirel = vfhpsi-psiR
+                vfhpsirel = np.mod((vfhpsirel + np.pi),2*np.pi) - np.pi
 
-                #Check if all costs are below critical cost lJ
-                if np.all(cJ<crit_cost):
+                #Collect allowable heading angles for a forward maneuver
+                vfhpsi1 = vfhpsi[(vfhpsirel>min_heading_angle)*(vfhpsirel<max_heading_angle)]
 
-                    #Jump to furthest grid cell along direction theta
-                    #Candidate waypoint xy coordinates in world frame
-                    # cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
-                    # cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
+                #Collect allowable heading angles for a reverse maneuver
+                rev_angle = np.pi/6
+                revmin = np.pi-rev_angle
+                revmax = np.pi+rev_angle
+                vfhpsi2 = vfhpsi[(vfhpsirel>revmin)*(vfhpsirel<revmax)]
 
-                    cwx = xyR[0] + ds*LA*np.cos(theta)
-                    cwy = xyR[1] + ds*LA*np.sin(theta)
+                #Collect admissible heading angles
+                vfhpsi = np.concatenate((vfhpsi1,vfhpsi2))
+
+                print(vfhpsi)
+
+                for theta in vfhpsi:
+                    #Get indices in 1-D costmap array
+                    #Get relative xy positions of each cell in world frame
+                    #in grid cell count
                     
-                    #Check if furthest point is outside prohibitive curvatures
-                    d2lc = ((xplc-cwx)**2 + (yplc-cwy)**2)**0.5
-                    d2rc = ((xprc-cwx)**2 + (yprc-cwy)**2)**0.5
+                    #Column shift
+                    cs = npts*np.cos(theta)
+                    #Row shift
+                    rs = npts*np.sin(theta)
 
-                    #Classify as VFH candidate only if outside curvature
-                    if d2lc>R and d2rc>R:
+                    #Indices
+                    csg = np.ceil(ncm//2 + cs)
+                    rsg = np.floor(ncm//2 + rs)
+
+                    I = np.int_(rsg*ncm + csg - 1)
+
+                    #Retrieve costs at these indices
+                    cJ = ODcp[I]
+
+
+                    #Check if all costs are below critical cost lJ
+                    if np.all(cJ<crit_cost):
+
+                        #Jump to furthest grid cell along direction theta
+                        #Candidate waypoint xy coordinates in world frame
+                        cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
+                        cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
                         
                         #Robot heading to goal
                         thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
@@ -254,6 +281,10 @@ class VFH:
                             # Ind = I
                             # CS = cs
                             # RS = rs
+            
+            else:
+                print('Not enough lanes to use VFH safely')
+                # break
 
         else:
             xyvfh = np.array(xG)
@@ -268,9 +299,9 @@ class VFH:
         self.xyvfh0 = xyvfh
 
         #Print waypoint coordinate and cost
-        print('VFH waypoint: ',xyvfh)
-        print('VFH waypoint pose: ',psivfh)
-        print('Robot costmap cost: ',ODcp[(ncm-ncm//2-1)*ncm + ncm//2])
+        # print('VFH waypoint: ',xyvfh)
+        # print('VFH waypoint pose: ',psivfh)
+        # print('Robot costmap cost: ',ODcp[(ncm-ncm//2-1)*ncm + ncm//2])
         # print('VFH wp costmap cost: ',CWP)
         # print('VFH waypoint indices',Ind)
         # print('THETAWP: ',THETAWP)
