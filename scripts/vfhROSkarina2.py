@@ -23,7 +23,7 @@ class VFH:
         #Lookahead distance
         self.LA = rospy.get_param('/vfh/LA',15)
         #VFH critical cost
-        self.crit_cost = rospy.get_param('/vfh/crit_cost',80)
+        self.crit_cost = rospy.get_param('/vfh/crit_cost',60)
         #Costmap size
         self.l = rospy.get_param('/costmap_2d/costmap/width',8)
         #Get local costmap resolution
@@ -38,12 +38,12 @@ class VFH:
         self.ndpsi = rospy.get_param('/vfh/ndpsi',72)
 
         #Get goal
-        self.xG = np.array([42,-36])
-        self.psiG = np.mod(2*np.pi - np.pi/2,2*np.pi)
+        self.xGG = np.array([42,-36])
+        self.psiGG = np.mod(2*np.pi - np.pi/2,2*np.pi)
 
         #Get initial position. Get this from some topic.
         # self.xR0 = np.array([-2.3,0.5])
-        self.xR0 = self.xG
+        self.xR0 = self.xGG
 
         #Initialize previous waypoint position and pose
         self.xyvfh0 = self.xR0
@@ -77,6 +77,11 @@ class VFH:
         #Define publisher for goal marker
         self.goal_pub = rospy.Publisher("/goal_marker",Marker,queue_size=2)
 
+        #Define publisher for local goal marker
+        self.local_pub = rospy.Publisher("/local_marker",Marker,queue_size=2)
+
+        #Define flag for local goal
+        self.flocal_goal = False
 
     #Receive robot pose
     def robot_pose(self,pose_msg):
@@ -89,14 +94,18 @@ class VFH:
         #Set flag to true
         self.fodom = True
 
+
     #Receive lane scan data 
     def lane_scan(self,lane):
         self.lane_scanned = np.array(lane.ranges)
 
-        # print(self.lane_scanned)
-
         #Set flag to true
         self.flane_scan = True
+
+        #Determine local goal if robot pose available
+        if self.fodom:
+            self.local_goal(self.lane_scanned)
+
 
     #Recieve local costmap data
     #local_costmap is postioned in /odom frame
@@ -106,8 +115,62 @@ class VFH:
         #Set flag to true
         self.fcost = True
 
-        if self.fodom and self.flane_scan:
+        if self.fodom and self.flane_scan and self.flocal_goal:
             self.pub_VFHwp()
+
+
+    #Determine local goal
+    def local_goal(self,lane_scanned):
+
+        #Filter points
+        min_range = 1
+        max_range = 4
+        #Determine indices of admissible points
+        idx = np.array(np.where(np.logical_and(lane_scanned>=min_range, lane_scanned<=max_range)))
+        idx = idx[0]
+        print('Indices of admissible lane points', idx)
+        #Determine distance to the admissible points
+        dist = lane_scanned[idx]
+        # print(dist)
+
+        #Determine heading, relative to the robot, to the admissible points
+        #Remember that lane_scan_frame is rolled 180 wrt base_link x
+        psil = -np.pi/179*idx + np.pi/2
+
+        #Heading in global frame
+        psil = psil + self.psi
+
+        #x-y location relative to the robot, along odom x-y
+        x = np.multiply(dist,np.cos(psil))
+        y = np.multiply(dist,np.sin(psil))
+
+        # print(x)
+        # print(y)
+        
+        #Transform to odom
+        xod = self.X + x
+        yod = self.Y + y
+
+        # print(xod)
+        # print(yod)
+
+        #Determine lane point closest to first global waypoint
+        D2GWP = np.sqrt(np.square(xod-self.xGG[0]) + np.square(yod-self.xGG[1]))
+
+        # print(D2GWP)
+
+        idxmin = np.argmin(D2GWP)
+        print('Index of closest lane point',idxmin)
+        self.xlG = np.array([xod[idxmin],yod[idxmin]])
+        self.psilG = psil[idxmin]
+
+        #Send to local goal marker
+        self.local_marker(self.xlG[0],self.xlG[1],self.psilG)
+
+        #Set flag to true
+        self.flocal_goal = True
+
+
 
     #Determine VFH waypoint
     def pub_VFHwp(self):
@@ -122,9 +185,13 @@ class VFH:
         xyR = np.array([self.X,self.Y])
         psiR = self.psi
 
-        #Collect goal position and pose
-        xG = self.xG
-        psiG = self.psiG
+        # #Collect goal position and pose
+        # xG = self.xGG
+        # psiG = self.psiGG
+
+        #Set local goal position and pose as VFH goal
+        xG = self.xlG
+        psiG = self.psilG
 
         #Collect grid cell size
         ds = self.ds
@@ -167,124 +234,123 @@ class VFH:
 
             npts = np.arange(3,LA,dtype=int)
 
-            #Filter heading within lane_scan
-            lane_scanned = self.lane_scanned
-            min_range = 1.5
-            max_range = 5
-            lane_scanned_filtered = np.where(np.logical_and(lane_scanned>=min_range, lane_scanned<=max_range))
+        #     #Filter heading within lane_scan
+        #     min_range = 1.5
+        #     max_range = 5
+        #     lane_scanned_filtered = np.where(np.logical_and(lane_scanned>=min_range, lane_scanned<=max_range))
 
-            print(np.array(lane_scanned_filtered).size)
+        #     print(np.array(lane_scanned_filtered).size)
             
-            if np.array(lane_scanned_filtered).size>1:
+        #     if np.array(lane_scanned_filtered).size>1:
 
                 
 
-                #We see sufficient lane to go ahead with VFH for lane-keeping
+        #         #We see sufficient lane to go ahead with VFH for lane-keeping
 
-                #Max forward heading relative to the robot 
-                max_heading_angle = -np.pi/179*np.min(lane_scanned_filtered) + np.pi/2 
-                #Min forward heading relative to the robot 
-                min_heading_angle = -np.pi/179*np.max(lane_scanned_filtered) + np.pi/2 
+        #         #Max forward heading relative to the robot 
+        #         max_heading_angle = -np.pi/179*np.min(lane_scanned_filtered) + np.pi/2 
+        #         #Min forward heading relative to the robot 
+        #         min_heading_angle = -np.pi/179*np.max(lane_scanned_filtered) + np.pi/2 
 
-                print(max_heading_angle)
-                print(min_heading_angle)
+        #         print(max_heading_angle)
+        #         print(min_heading_angle)
 
-                #vfhpsi relative to the robot
-                vfhpsirel = vfhpsi-psiR
-                vfhpsirel = np.mod((vfhpsirel + np.pi),2*np.pi) - np.pi
+        #         #vfhpsi relative to the robot
+        #         vfhpsirel = vfhpsi-psiR
+        #         vfhpsirel = np.mod((vfhpsirel + np.pi),2*np.pi) - np.pi
 
-                #Collect allowable heading angles for a forward maneuver
-                vfhpsi1 = vfhpsi[(vfhpsirel>min_heading_angle)*(vfhpsirel<max_heading_angle)]
+        #         #Collect allowable heading angles for a forward maneuver
+        #         vfhpsi1 = vfhpsi[(vfhpsirel>min_heading_angle)*(vfhpsirel<max_heading_angle)]
 
-                #Collect allowable heading angles for a reverse maneuver
-                rev_angle = np.pi/6
-                revmin = np.pi-rev_angle
-                revmax = np.pi+rev_angle
-                vfhpsi2 = vfhpsi[(vfhpsirel>revmin)*(vfhpsirel<revmax)]
+        #         #Collect allowable heading angles for a reverse maneuver
+        #         rev_angle = np.pi/6
+        #         revmin = np.pi-rev_angle
+        #         revmax = np.pi+rev_angle
+        #         vfhpsi2 = vfhpsi[(vfhpsirel>revmin)*(vfhpsirel<revmax)]
 
-                #Collect admissible heading angles
-                vfhpsi = np.concatenate((vfhpsi1,vfhpsi2))
+        #         #Collect admissible heading angles
+        #         vfhpsi = np.concatenate((vfhpsi1,vfhpsi2))
 
-                print(vfhpsi)
+        #         print(vfhpsi)
 
-                for theta in vfhpsi:
-                    #Get indices in 1-D costmap array
-                    #Get relative xy positions of each cell in world frame
-                    #in grid cell count
+            for theta in vfhpsi:
+                #Get indices in 1-D costmap array
+                #Get relative xy positions of each cell in world frame
+                #in grid cell count
+                
+                #Column shift
+                cs = npts*np.cos(theta)
+                #Row shift
+                rs = npts*np.sin(theta)
+
+                #Indices
+                csg = np.ceil(ncm//2 + cs)
+                rsg = np.floor(ncm//2 + rs)
+
+                I = np.int_(rsg*ncm + csg - 1)
+
+                #Retrieve costs at these indices
+                cJ = ODcp[I]
+
+
+                #Check if all costs are below critical cost lJ
+                if np.all(cJ<crit_cost):
+
+                    #Jump to furthest grid cell along direction theta
+                    #Candidate waypoint xy coordinates in world frame
+                    cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
+                    cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
                     
-                    #Column shift
-                    cs = npts*np.cos(theta)
-                    #Row shift
-                    rs = npts*np.sin(theta)
+                    #Robot heading to goal
+                    thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
+                    #Robot heading to candidate waypoint
+                    thetawp = np.mod(2*np.pi + np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)), 2*np.pi) 
+                    #thetawp = theta
+                    #Robot heading to previous waypoint
+                    thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
+                    
+                    #Calculate VFH cost at the candidate waypoint
+                    # a = targetA - sourceA
+                    # a = (a + 180) % 360 - 180
 
-                    #Indices
-                    csg = np.ceil(ncm//2 + cs)
-                    rsg = np.floor(ncm//2 + rs)
+                    sd = np.array([thetag,thetawp0,psiR])
+                    sd = sd - thetawp
+                    sd = np.abs(np.mod((sd + np.pi),2*np.pi) - np.pi)
 
-                    I = np.int_(rsg*ncm + csg - 1)
+                    J1 = wg*sd[0]
+                    J2 = wd*sd[1]
+                    J3 = wo*sd[2]
 
-                    #Retrieve costs at these indices
-                    cJ = ODcp[I]
+                    J = J1 + J2 + J3
 
+                    # print('Cand. VFH waypoint: ',np.array([cwx,cwy]))
+                    # print('Cand. VFH waypoint pose: ',thetawp)
+                    # print('Robot to Goal pose: ',thetag)
+                    # print('Cand. VFH cost wg: ',J1)
+                    # print('Cand. VFH cost wd: ',J2)
+                    # print('Cand. VFH cost wo: ',J3)
+                    # print('Cand. VFH cost: ',J)
+                    # print('Cand. costmap cost: ', cJ[-1])
 
-                    #Check if all costs are below critical cost lJ
-                    if np.all(cJ<crit_cost):
+                    #Compare candidate waypoint cost and current minimum
+                    if J<=Jvfh:
+                        #Update candidate waypoint and min VFH cost
+                        xyvfh = np.array([cwx,cwy])
+                        psivfh = thetawp
+                        Jvfh = J
 
-                        #Jump to furthest grid cell along direction theta
-                        #Candidate waypoint xy coordinates in world frame
-                        cwx = xyR[0] + ds*npts[-1]*np.cos(theta)
-                        cwy = xyR[1] + ds*npts[-1]*np.sin(theta)
-                        
-                        #Robot heading to goal
-                        thetag = np.mod(2*np.pi + np.arctan2((xG[1]-xyR[1]),(xG[0]-xyR[0]+0.001)), 2*np.pi)
-                        #Robot heading to candidate waypoint
-                        thetawp = np.mod(2*np.pi + np.arctan2((cwy-xyR[1]),(cwx-xyR[0]+0.001)), 2*np.pi) 
-                        #thetawp = theta
-                        #Robot heading to previous waypoint
-                        thetawp0 = np.mod(2*np.pi + np.arctan2((self.xyvfh0[1]-xyR[1]),(self.xyvfh0[0]-xyR[0]+0.001)), 2*np.pi)
-                        
-                        #Calculate VFH cost at the candidate waypoint
-                        # a = targetA - sourceA
-                        # a = (a + 180) % 360 - 180
-
-                        sd = np.array([thetag,thetawp0,psiR])
-                        sd = sd - thetawp
-                        sd = np.abs(np.mod((sd + np.pi),2*np.pi) - np.pi)
-
-                        J1 = wg*sd[0]
-                        J2 = wd*sd[1]
-                        J3 = wo*sd[2]
-
-                        J = J1 + J2 + J3
-
-                        # print('Cand. VFH waypoint: ',np.array([cwx,cwy]))
-                        # print('Cand. VFH waypoint pose: ',thetawp)
-                        # print('Robot to Goal pose: ',thetag)
-                        # print('Cand. VFH cost wg: ',J1)
-                        # print('Cand. VFH cost wd: ',J2)
-                        # print('Cand. VFH cost wo: ',J3)
-                        # print('Cand. VFH cost: ',J)
-                        # print('Cand. costmap cost: ', cJ[-1])
-
-                        #Compare candidate waypoint cost and current minimum
-                        if J<=Jvfh:
-                            #Update candidate waypoint and min VFH cost
-                            xyvfh = np.array([cwx,cwy])
-                            psivfh = thetawp
-                            Jvfh = J
-
-                            #Debuggers
-                            # THETAWP = thetawp
-                            # THETAG = thetag
-                            # THETAWP0 = thetawp0
-                            CWP = cJ
-                            # Ind = I
-                            # CS = cs
-                            # RS = rs
+                        #Debuggers
+                        # THETAWP = thetawp
+                        # THETAG = thetag
+                        # THETAWP0 = thetawp0
+                        CWP = cJ
+                        # Ind = I
+                        # CS = cs
+                        # RS = rs
             
-            else:
-                print('Not enough lanes to use VFH safely')
-                # break
+            # else:
+            #     print('Not enough lanes to use VFH safely')
+            #     # break
 
         else:
             xyvfh = np.array(xG)
@@ -328,8 +394,8 @@ class VFH:
 
         #Send VFH waypoint to a blue marker publisher
         self.pub_marker(xyvfh[0],xyvfh[1],psivfh)
-        #Send goal to a green goal publisher
-        self.goal_marker(xG[0],xG[1],psiG)
+        #Send global goal to a green goal publisher
+        self.goal_marker(self.xGG[0],self.xGG[1],self.psiGG)
 
         #Reset flags
         self.fcost = False
@@ -370,7 +436,7 @@ class VFH:
         self.marker_pub.publish(self.marker)
 
 
-    #A function that publishes a marker at the goal
+    #A function that publishes a marker at the global goal
     def goal_marker(self,wpx,wpy,wppsi):
 
         #Define marker
@@ -403,6 +469,41 @@ class VFH:
 
         #Publish marker
         self.goal_pub.publish(self.marker)
+
+
+    #A function that publishes a marker at the local goal
+    def local_marker(self,wpx,wpy,wppsi):
+
+        #Define marker
+        self.marker = Marker()
+
+        self.marker.header.frame_id = "odom"
+        self.marker.header.stamp = rospy.Time.now()
+
+        self.marker.type = 0
+        self.marker.id = 0
+
+        self.marker.scale.x = 0.3
+        self.marker.scale.y = 0.05
+        self.marker.scale.z = 0.05
+
+        self.marker.color.r = 1
+        self.marker.color.g = 0
+        self.marker.color.b = 1
+        self.marker.color.a = 1
+
+        psiR = wppsi
+
+        self.marker.pose.position.x = wpx
+        self.marker.pose.position.y = wpy
+        self.marker.pose.position.z = 0.2
+        self.marker.pose.orientation.x = 0.0
+        self.marker.pose.orientation.y = 0.0
+        self.marker.pose.orientation.z = np.sin(psiR/2)
+        self.marker.pose.orientation.w = np.cos(psiR/2)
+
+        #Publish marker
+        self.local_pub.publish(self.marker)
 
 
 
