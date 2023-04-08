@@ -1,0 +1,8 @@
+<!-- A launch file to launch vfh parameters -->
+
+<launch>
+
+<!-- Load VFH parameters -->
+<rosparam file = "$(find vector_field_histogram)/param/vfhwpkarina.yaml"/>
+
+</launch>

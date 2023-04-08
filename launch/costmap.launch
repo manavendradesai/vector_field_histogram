@@ -1,0 +1,68 @@
+<!-- This file launches the Turtlebot3 burger in the turtleworld. 
+This file launches move_base and publishes global costmap and local costmap
+data. The costmap can be treated as the active region for the VFH+.
+
+move_base requires the AMCL node to run since the robot must be 
+localized to generate a base_footprint to map transform in order 
+to positon the global and local costmaps -->
+
+<launch>
+
+  <!-- Static global map -->
+  <arg name="map_file" default="$(find vector_field_histogram)/maps/testworld.yaml"/>
+  <arg name="open_rviz" default="true"/>
+  <arg name="move_forward_only" default="false"/>
+
+  <!-- Map server. Allows saving and loading of maps -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+  
+  <!-- Robot pose -->
+  <arg name="x" default="-1"/>
+  <arg name="y" default="-2"/>
+  <arg name="z" default="0"/>
+  <arg name="roll" default="0"/>
+  <arg name="pitch" default="0"/>
+  <arg name="yaw" default="0"/>
+
+  <!-- Launch urdf model-->
+  <include file="$(find vector_field_histogram)/launch/robot.launch"/>
+
+  <!-- World File -->
+  <arg name="world_file" default="$(find vector_field_histogram)/world/turtlebot3_world.world"/>
+
+  <!-- Launch base Gazebo World -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world_file)"/>
+  </include>
+
+<!-- Find my robot Description-->
+<!-- '$(find vector_field_histogram)/urdf/my_robot.xacro'"/> -->
+<param name = "robot_description" command = "$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_burger.urdf.xacro" />
+
+<!-- Spawn My Robot -->
+<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" 
+      args="-urdf -param robot_description -model my_robot 
+            -x $(arg x) -y $(arg y) -z $(arg z)
+            -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
+
+<!-- AMCL  -->
+<include file="$(find turtlebot3_navigation)/launch/amcl.launch" >
+<arg name="initial_pose_x" value="$(arg x)"/>
+<arg name="initial_pose_y" value="$(arg y)"/>
+<arg name="initial_pose_a" value="$(arg z)"/>
+</include> 
+
+<!-- move_base -->
+<include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+<arg name="move_forward_only" value="$(arg move_forward_only)"/>
+</include>
+
+<!-- Launch teleop node in a separate terminal -->
+<!-- <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/> -->
+
+<!--launch rviz-->
+<group if="$(arg open_rviz)"> 
+    <node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find vector_field_histogram)/rviz/costmap.rviz" />    
+</group>
+
+</launch>

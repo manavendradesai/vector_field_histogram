@@ -1,0 +1,9 @@
+vfh:
+  dia: 0.2
+  LA: 10
+  wg: 10
+  wd: 5
+  wo: 7
+  crit_cost: 75
+  ndpsi: 72
+  ncm: 20

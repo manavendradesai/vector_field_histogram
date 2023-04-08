@@ -1,0 +1,78 @@
+<!-- This launch file launches nodes to implement VFH when the turtlebot is in an
+unmapped surrounding -->
+
+<launch>
+
+<!-- Arguments -->
+<arg name="model" default="burger" doc="model type [burger, waffle, waffle_pi]"/>
+<arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
+<arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
+<arg name="open_rviz" default="true"/>
+<arg name="move_forward_only" default="false"/>
+
+
+<!-- Robot pose -->
+<arg name="x" default="0"/>
+<arg name="y" default="0.75"/>
+<arg name="z" default="0"/>
+<arg name="roll" default="0"/>
+<arg name="pitch" default="0"/>
+<arg name="yaw" default="0"/>
+
+
+<!-- Launch urdf model-->
+<include file="$(find vector_field_histogram)/launch/robot.launch"/>
+
+
+<!-- World File -->
+<arg name="world_file" default="$(find vector_field_histogram)/world/turtlebot3_world.world"/>
+
+
+<!-- Launch base Gazebo World -->
+<include file="$(find gazebo_ros)/launch/empty_world.launch">
+<arg name="world_name" value="$(arg world_file)"/>
+</include>
+
+
+<!-- Find my robot Description-->
+<!-- '$(find vector_field_histogram)/urdf/my_robot.xacro'"/> -->
+<param name = "robot_description" command = "$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_burger.urdf.xacro" />
+
+
+<!-- Spawn My Robot -->
+<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" 
+      args="-urdf -param robot_description -model my_robot 
+            -x $(arg x) -y $(arg y) -z $(arg z)
+            -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
+
+
+<!-- SLAM: Gmapping, Cartographer, Hector, Karto, Frontier_exploration, RTAB-Map -->
+<include file="$(find turtlebot3_slam)/launch/turtlebot3_$(arg slam_methods).launch">
+<arg name="model" value="$(arg model)"/>
+<arg name="configuration_basename" value="$(arg configuration_basename)"/>
+</include>
+
+<!-- move_base -->
+<include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+<arg name="move_forward_only" value="$(arg move_forward_only)"/>
+</include>
+
+<!-- Launch teleop node in a separate terminal -->
+<!-- <include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/> -->
+
+<!--launch rviz-->
+<group if="$(arg open_rviz)"> 
+    <node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find vector_field_histogram)/rviz/slamvfh.rviz" />    
+</group>
+
+
+<!-- Load VFH parameters -->
+<rosparam file = "$(find vector_field_histogram)/param/vfhwp.yaml"/>
+
+
+<!-- Launch vfh node -->
+<!-- <node name="vfhROS" pkg="vector_field_histogram" type="vfhROS.py" output="screen"/> -->
+
+<!-- <node name="vfhROSDWA" pkg="vector_field_histogram" type="vfhROSDWA.py" output="screen"/> -->
+
+</launch>

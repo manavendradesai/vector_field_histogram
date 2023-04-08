@@ -1,0 +1,43 @@
+
+<!-- This file simply launches the Turtlebot3 burger in a test_world. 
+The LiDAR scans can be visualized here. You can add/delete objects 
+and play around with the space available in this world -->
+
+<launch>
+
+  <!-- Robot pose at the time of launch -->
+  <arg name="x" default="0"/>
+  <arg name="y" default="0"/>
+  <arg name="z" default="0"/>
+  <arg name="roll" default="0"/>
+  <arg name="pitch" default="0"/>
+  <arg name="yaw" default="0"/>
+
+  <!-- Setting the model to launch as burger -->
+  <arg name="model" default="burger"/>
+
+  <!-- Launch robot urdf model-->
+  <include file="$(find vector_field_histogram)/launch/robot.launch"/>
+
+  <!-- World File -->
+  <arg name="world_file" default="$(find vector_field_histogram)/world/testworld"/>
+
+  <!-- Launch base Gazebo World -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world_file)"/>
+  </include>
+
+<!-- Find my robot Description-->
+<param name = "robot_description" command = "$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+
+<!-- Spawn My Robot -->
+<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" 
+      args="-urdf -param robot_description -model my_robot 
+            -x $(arg x) -y $(arg y) -z $(arg z)
+            -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
+
+<!--launch rviz-->
+<node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find vector_field_histogram)/rviz/test_config.rviz" />    
+
+
+</launch>

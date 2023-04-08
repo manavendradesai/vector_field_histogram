@@ -1,0 +1,48 @@
+<launch>
+
+<!-- This file simply launches the Turtlebot3 burger in the turtleworld. 
+This file can be used to implement gmapping and create a static map.
+This file also launches the teleop node -->
+
+  <!-- Robot pose -->
+  <arg name="x" default="0"/>
+  <arg name="y" default="0.75"/>
+  <arg name="z" default="0"/>
+  <arg name="roll" default="0"/>
+  <arg name="pitch" default="0"/>
+  <arg name="yaw" default="0"/>
+
+  <!-- Setting the model to launch as burger -->
+  <arg name="model" default="burger"/>
+
+  <!-- Launch urdf model-->
+  <include file="$(find vector_field_histogram)/launch/robot.launch"/>
+
+  <!-- World File -->
+  <arg name="world_file" default="$(find vector_field_histogram)/world/turtlebot3_world.world"/>
+
+  <!-- Launch base Gazebo World -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world_file)"/>
+  </include>
+
+<!-- Find my robot Description-->
+<param name = "robot_description" command = "$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+
+<!-- Spawn My Robot -->
+<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" 
+      args="-urdf -param robot_description -model my_robot 
+            -x $(arg x) -y $(arg y) -z $(arg z)
+            -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
+
+<!-- Launch gmapping in a separate terminal -->
+<include file="$(find turtlebot3_slam)/launch/turtlebot3_gmapping.launch"/>
+
+<!-- Launch teleop node in a separate terminal -->
+<include file="$(find turtlebot3_teleop)/launch/turtlebot3_teleop_key.launch"/>
+
+<!-- Launch rviz -->
+<node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find vector_field_histogram)/rviz/gmapping.rviz" />    
+
+
+</launch>

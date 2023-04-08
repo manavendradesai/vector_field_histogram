@@ -1,0 +1,34 @@
+# footprint: [[0.1016, 0.36068], [0.1016, -0.36068], [-0.1016, -0.36068], [-0.1016, -0.28448], [-0.6096, -0.25908],
+#               [-0.7874, -0.18415], [-0.7874, 0.18415], [-0.6096, 0.25908], [-0.1016, 0.28448], [-0.1016, 0.36068]]
+
+footprint: [[0.5016, 0.36068], [0.5016, -0.36068], [0.2016, -0.36068], [0.2016, -0.28448], [-0.4096, -0.25908],
+              [-0.5, -0.18415], [-0.5, 0.18415], [-0.4096, 0.25908], [0.2016, 0.28448], [0.2016, 0.36068]]
+
+global_frame: odom
+robot_base_frame: base_link
+width: 8.0
+height: 8.0
+origin_x: -1.0
+origin_y: -2.0
+resolution: 0.1
+update_frequency: 5
+publish_frequency: 5
+transform_tolerance: 0.5
+always_send_full_costmap: true
+rolling_window: true
+inflation_radius: 2
+cost_scaling_factor: 1
+
+plugins:
+    - {name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+# obstacle_layer:
+#     observation_sources: scan
+#     scan: {sensor_frame: velodyne, data_type: LaserScan, topic: /scan, marking: true, clearing: true, observation_persistence: 0, obstacle_range: 3.0, raytrace_range: 3.5, min_obstacle_height: 0.0}
+
+obstacle_layer:
+    observation_sources: scan1 scan2
+    scan1: {sensor_frame: velodyne, data_type: LaserScan, topic: /scan, marking: true, clearing: true, observation_persistence: 0, obstacle_range: 4.0, raytrace_range: 4, min_obstacle_height: 0.0}
+    # scan2: {sensor_frame: lane_scan_frame, data_type: LaserScan, topic: /img_to_laser/lane_scan, marking: true, clearing: true, observation_persistence: 0, obstacle_range: 3.0, raytrace_range: 3.5, min_obstacle_height: 0.0, inf_is_valid: true}
+    scan2: {sensor_frame: lane_scan_frame, data_type: LaserScan, topic: /img_to_laser/lane_scan, marking: true, clearing: true, observation_persistence: 0, obstacle_range: 4.0, raytrace_range: 4, min_obstacle_height: 0.0}

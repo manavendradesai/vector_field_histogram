@@ -1,0 +1,40 @@
+<launch>
+<!-- ### This launch file starts a standalone instance of Costmap2D and that takes 2 laser scans and no static map  ### -->
+
+    <!-- Arguments -->
+    <arg name="model" default="karina" />
+
+    <!-- Change these to match your scan topics  -->
+
+    <!-- LiDAR is laser 1 and lane2laser is laser 2 -->
+
+    <!-- <arg name="scan_topic1" default="/scan" /> -->
+    <!-- <arg name="scan_topic2" default="lane2laser_scan" /> -->
+
+    
+    <!-- This tf chain from global frame to odom to base_link must must exist, but usually will be provided by other sources  -->
+    <!-- like AMCL and/or robot _localization. These are only here for testing ... comment out when other sources are present -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="tf_map_odom"       args="0 0 0 0 0 0 map  odom       10" />
+    <node pkg="tf" type="static_transform_publisher" name="tf_odom_base_link" args="0 0 0 0 0 0 odom base_link  10" /> -->
+
+
+    <!-- These should be customized for your robot, but should always be needed-->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="tf_base_link_laser1" args="0 0 0 0 0 0 base_link laser1_frame 10" />
+    <node pkg="tf" type="static_transform_publisher" name="tf_base_link_laser2" args="0 0 0 0 0 0 base_link laser2_frame 10" /> -->
+
+    <arg name="laser1_frame" default="velodyne" />
+    <arg name="laser2_frame" default="lane_scan_frame" />
+
+    <node pkg="tf" type="static_transform_publisher" name="tf_base_link_laser1" args="0 0 0 0 0 0 base_link $(arg laser1_frame) 40" />
+    <!-- <node pkg="tf" type="static_transform_publisher" name="tf_base_link_laser2" args="0 0 0 0 0 0 base_link $(arg laser2_frame) 10" /> -->
+
+    <!-- Start the costmap2d node -->
+    <node pkg="costmap_2d" type="costmap_2d_node" name="costmap_2d" output="screen" />
+    
+    <!-- Load the costmap_2d parameters -->
+    <!-- <rosparam command="load" ns="/costmap_2d/costmap" subst_value="True"/> -->
+    <rosparam file="$(find vector_field_histogram)/param/costmap_common_params_$(arg model).yaml" command="load" ns="/costmap_2d/costmap" />
+
+
+
+</launch>
