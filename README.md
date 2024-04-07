@@ -8,4 +8,4 @@ VFH_and_DWA.mp4 provides a demo of the VFH and DWA in action. VFH provides a (bl
 The Dynamic Window Approach (DWA) samples smooth and collision-free paths to the VFH-selected waypoint. The turtlebot 
 follows these paths to eventually get to its goal (green arrow).
 
-![]([https://github.com/manavendradesai/vector_field_histogram/blob/master/VFH_turtlebot.gif](https://github.com/manavendradesai/vector_field_histogram/blob/master/VFH_DWA_turtlebot.gif))
+![](https://github.com/manavendradesai/vector_field_histogram/blob/master/VFH_DWA_turtlebot.gif)
