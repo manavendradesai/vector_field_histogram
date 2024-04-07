@@ -1,4 +1,4 @@
-A GitHub repository that implements the Vector Field Histogram (VFH) navigation algorithm on a Turtlebot3.
+A GitHub repository that implements the Vector Field Histogram (VFH) navigation algorithm on a Turtlebot3. VFH is used to select waypoints in an obstacle-free space and the Dynamic Window Approach (DWA) is used to plan smooth paths to the waypoint and select appropriate robot velocities.
 
 VFH_only.mp4 provides a demo of the VFH in action. VFH provides a (blue) waypoint in obstacle-free space.
 
